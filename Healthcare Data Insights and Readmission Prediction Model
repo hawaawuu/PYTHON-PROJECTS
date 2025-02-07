@@ -1,0 +1,70 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+# Generate Sample Dataset
+np.random.seed(42)
+
+# Sample Data
+data = pd.DataFrame({
+    'Patient_ID': range(1, 101),
+    'Age': np.random.randint(20, 90, size=100),
+    'Department': np.random.choice(['Cardiology', 'Oncology', 'Neurology', 'Orthopedics'], size=100),
+    'Length_of_Stay': np.random.randint(1, 15, size=100),
+    'Readmission_Rate': np.random.uniform(5, 30, size=100),
+    'Comorbidities': np.random.randint(0, 5, size=100),
+    'Readmitted': np.random.choice([0, 1], size=100)
+})
+
+# Save to CSV (optional)
+# data.to_csv('nursing_data.csv', index=False)
+
+# Data Overview
+print("Data Summary:\n", data.info())
+print("\nMissing Values:\n", data.isnull().sum())
+
+# Data Cleaning (Example: Fill missing values)
+data.fillna(data.mean(numeric_only=True), inplace=True)
+
+# Descriptive Statistics
+print("\nDescriptive Statistics:\n", data.describe())
+
+# Visualization 1: Readmission Rates by Department
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Department', y='Readmission_Rate', data=data)
+plt.title('Readmission Rates by Department')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# Visualization 2: Average Length of Stay by Age Group
+data['Age_Group'] = pd.cut(data['Age'], bins=[20, 35, 50, 65, 90], labels=['20-35', '36-50', '51-65', '66-90'])
+
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='Age_Group', y='Length_of_Stay', data=data)
+plt.title('Length of Stay by Age Group')
+plt.show()
+
+# Predictive Analysis (Optional: Logistic Regression for Readmission Prediction)
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+# Example: Predicting Readmission (1 = Yes, 0 = No)
+features = ['Age', 'Length_of_Stay', 'Comorbidities']  # Example features
+target = 'Readmitted'
+
+X = data[features]
+y = data[target]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+predictions = model.predict(X_test)
+
+# Model Evaluation
+accuracy = accuracy_score(y_test, predictions)
+print(f"\nModel Accuracy: {accuracy * 100:.2f}%")

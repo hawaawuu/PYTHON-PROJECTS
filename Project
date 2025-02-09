@@ -2,6 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 # Generate Sample Dataset
 np.random.seed(42)
@@ -21,7 +24,7 @@ data = pd.DataFrame({
 # data.to_csv('nursing_data.csv', index=False)
 
 # Data Overview
-print("Data Summary:\n", data.info())
+data.info()
 print("\nMissing Values:\n", data.isnull().sum())
 
 # Data Cleaning (Example: Fill missing values)
@@ -47,10 +50,6 @@ plt.title('Length of Stay by Age Group')
 plt.show()
 
 # Predictive Analysis (Optional: Logistic Regression for Readmission Prediction)
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
-
 # Example: Predicting Readmission (1 = Yes, 0 = No)
 features = ['Age', 'Length_of_Stay', 'Comorbidities']  # Example features
 target = 'Readmitted'
@@ -68,3 +67,7 @@ predictions = model.predict(X_test)
 # Model Evaluation
 accuracy = accuracy_score(y_test, predictions)
 print(f"\nModel Accuracy: {accuracy * 100:.2f}%")
+
+# Additional Evaluation Metrics
+print("\nClassification Report:\n", classification_report(y_test, predictions))
+print("Confusion Matrix:\n", confusion_matrix(y_test, predictions))

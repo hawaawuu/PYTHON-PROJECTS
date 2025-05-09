@@ -1,0 +1,297 @@
+# Import main packages
+import pandas as pd
+import numpy as np
+
+# Plotting
+import matplotlib.pyplot as plt
+%notebook inline
+
+# Display settings
+#plt.style.use('seaborn')
+pd.set_option('max_colwidth', 250)
+pd.set_option('display.float_format', lambda x: '%.3f' % x)
+
+# Importing the dataset into a DF named notes
+notes = pd.read_csv('clinical_notes_5k.csv')
+notes.head(20)
+
+# Get length of rows from dataframe
+len(notes)
+
+# Getting average characters per note
+note_avg_len = notes['note'].str.len().mean()
+note_avg_len
+
+# Getting average characters per FULL note
+note_avg_len = notes['full_note'].str.len().mean()
+note_avg_len
+
+#NLK Tools
+import nltk
+nltk.download('wordnet')
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger_eng')
+nltk.download('punkt_tab')
+
+from nltk import word_tokenize, pos_tag
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+from nltk.probability import FreqDist
+
+# Creates variable for stopwords, and checks it out
+stop_eng = stopwords.words('english')
+stop_eng
+
+len(stop_eng)
+
+# Function to lemmatize list of strings
+# Returns list of lists of tokens
+def lemmatize_list(data):
+    wnl = WordNetLemmatizer()
+    lemma_list = []
+
+    for i in data:
+        txt = i
+        lemmatized = [wnl.lemmatize(i,j[0].lower()) if j[0].lower() in ['a','n','v','r'] else wnl.lemmatize(i) for i,j in pos_tag(word_tokenize(txt))]
+        lemma_list.append(lemmatized)
+
+    return lemma_list
+
+
+# Uses "list comprehension" to accept list of lists of tokens
+# Returns list of lists of tokens, lowercased and lemmatized
+def remove_punc(texts):
+    return [[word.lower() for word in doc if word.isalpha()] for doc in texts]
+
+
+# Accepts list of lists of tokens
+# Returns same list without stop words
+def remove_stopwords(texts):
+    return [[word for word in doc if word not in stop_eng] for doc in texts]
+
+# Calling the lemmatize functin from above
+# This may take a little while to process...
+notes_lemma = lemmatize_list(notes['note'].tolist())
+
+# Calling remove_punctuations function and lower case
+notes_noPunc = remove_punc(notes_lemma)
+
+# Removes stop words
+notes_clean = remove_stopwords(notes_noPunc)
+
+# From these operations, each message becomes a list of "tokens" ( a list of strings/terms/words).
+# NOTE: This retuns a "list of list of strings". Each note or document is a list of tokens. 
+# Since we have many documents, we have a list of lists of strings or tokens. 
+notes_clean
+
+# Accepts list of lists of tokens
+# Returns same list without words in trash_list
+# For this to work, you need to have a list of words to be removed places in trash_list variable below
+def remove_additional(texts):
+    return [[word for word in doc if word not in trash_list] for doc in texts]
+
+# Add words to the trashlist, make sure they have quotes around and are separated by a comma
+trash_list = []
+
+# Converts list of lists to list of strings
+# Necessary because FreqDist will not accept list of lists
+
+clean_list = []
+for i in notes_clean:
+    for str_i in i:
+        clean_list.append(str_i)
+
+clean_list
+
+#Frequency Distribution
+# Create frequency distribution for existing words
+# This needs to be applied into a "list of strings" (not a list of list of strings)
+notes_dist = FreqDist(clean_list)
+notes_dist
+
+# Frequency distribution for full note
+full_note_dist = FreqDist(clean_list)
+full_note_dist
+
+type(notes_dist)
+
+type(full_note_dist)
+
+# Use the most_common function of the FreqDist object to get the 20 most commonly used terms of note
+most_common_20_terms = notes_dist.most_common(20)
+most_common_20_terms
+
+# 20 most commonly used terms of full note
+most_common_20_terms_full_note = full_note_dist.most_common(20)
+most_common_20_terms_full_note
+
+# Takes most common distribution values and creates a dataframe to ease graphing
+# It loops through the most_common list, and for each item it adds it into a dictionary
+# The reason for adding it into a dictionary is because we can then just plug it in to create a dataframe
+
+values_list=[]
+counter = 0
+while counter<20:
+    dict1 = {'term':most_common_20_terms[counter][0],
+             'count':most_common_20_terms[counter][1]}
+    counter=counter+1
+    values_list.append(dict1)
+
+terms_count_df = pd.DataFrame(values_list)
+terms_count_df
+
+#Feature Extraction
+# Code to create a horizontal bar graph to visualize terms
+#You may change this to improve size of graph
+plt.figure(figsize=(10, 8))
+
+# Use bar graph from plt object to create bargraph
+plt.barh(terms_count_df["term"], terms_count_df["count"], color = 'red')
+plt.xlabel("count")
+plt.ylabel("term")
+
+# You need to save fig before showing it
+plt.savefig('most_common_20_terms_clinical_notes.png')
+plt.show()
+
+# Bar graph for full note
+
+plt.figure(figsize=(10, 8))
+
+# Use bar graph from plt object to create bargraph
+plt.barh(terms_count_df["term"], terms_count_df["count"], color = 'green')
+plt.xlabel("count")
+plt.ylabel("term")
+
+# You need to save fig before showing it
+plt.savefig('most_common_20_terms_clinical_full_note.png')
+plt.show()
+
+# Counting appearance of word "pain"
+word_list = ['pain']
+notes['pain_count'] = 0
+
+for index, row in notes.iterrows():
+    count = sum(row['full_note'].count(i) for i in word_list)
+    notes.at[index, 'pain_count'] = count
+
+# Use same structure as above to count appearance of interesting word 1 of your choice
+word_list = ['patient']
+notes['patient_count'] = 0
+
+for index, row in notes.iterrows():
+    count = sum(row['full_note'].count(i) for i in word_list)
+    notes.at[index, 'patient_count'] = count
+
+# Use same structure as above to count appearance of interesting word 2 of your choice
+word_list = ['examination']
+notes['examination_count'] = 0
+
+for index, row in notes.iterrows():
+    count = sum(row['full_note'].count(i) for i in word_list)
+    notes.at[index,'examination_count'] = count
+
+notes.head(20)
+
+# Using Regex to identify references to age
+import re
+
+# Define the regex pattern
+# If you can think of a better Regex pattern, try it here!
+age_pattern = r'(\d{1,2}-year)'
+
+# Extract the dates and add to a new column
+notes['age'] = notes['note'].str.extract(age_pattern, expand=False)
+notes['age_clean'] = notes['note'].str.extract(r'(\d{1,2})', expand=False)
+
+# The following will convert the strings with only numbers into FLOAT (Decimal) data type
+# We cannot convert this directly into integer, which would be more proper, because there are NA values in many of the cells.
+# It may be better to leave it as "float" rather than "integer" because when we do other analysis the NA values are often automatically disregarded
+notes['age_clean']  = pd.to_numeric(notes['age_clean'], errors='coerce')
+
+notes
+
+#Correlation between features
+# Create a scatter plot to visualize relationship between references to distinct terms of your choice
+
+x = notes['pain_count']
+y = notes['patient_count']
+
+plt.scatter(x, y, alpha=0.5)
+
+# add a label to the x axis
+plt.xlabel('paint_count')
+
+# add a label to the y axis
+plt.ylabel('patient_count')
+
+# add a title
+plt.title('Pain vs Patient')
+plt.show()
+
+
+
+# Scatter plot 2
+x = notes['examination_count']
+y = notes['patient_count']
+
+plt.scatter(x, y, alpha=0.5)
+
+# add a label to the x axis
+plt.xlabel('examination_count')
+
+# add a label to the y axis
+plt.ylabel('patient_count')
+
+# add a title
+plt.title('Examination vs Patient')
+plt.show()
+
+clinical_full_quant = notes[['patient_count', 'pain_count', 'examination_count','age_clean']]
+clinical_full_quant.corr()
+
+# Get a correlation matrix between how often specific terms are used, or the age variable
+# Remember, correlation can only apply to numeric (integer or float) columns
+import plotly.express as px
+fig = px.scatter_matrix(clinical_full_quant, dimensions=["patient_count", "pain_count", "examination_count", "age_clean"])
+
+fig.update_layout (
+    title=dict (text='Clinical Dataset'),
+    width=1000,
+    height=1000,
+)
+
+fig.show()
+
+#Sentiment analysis
+# Importing additional sentimen analysis packages
+from nltk.sentiment import SentimentIntensityAnalyzer
+# from nltk.classify import NaiveBayesClassifier
+
+# Download NLTK resources
+nltk.download('vader_lexicon')
+
+# Initialize the Vader sentiment analyzer
+sia = SentimentIntensityAnalyzer()
+
+# Apply sentiment analysis and add scores to the DataFrame
+notes['sentiment_score'] = notes['full_note'].apply(lambda x: sia.polarity_scores(x)['compound'])
+notes['sentiment_category'] = notes['sentiment_score'].apply(lambda x: 'positive' if x >= 0 else 'negative')
+
+# Display the updated DataFrame
+notes.head()
+
+# Describe basic statistics of sentiment score
+notes[["sentiment_score"]].describe()
+
+# Getting more detailed distribution of sentiment scores
+# Create a histogram of sentiment scores
+import seaborn as sns
+sentiment_scores =np.random
+plt.figure(figsize=(10,6))
+sns.histplot(notes['sentiment_score'], kde=True)
+plt.title('Histogram of sentiment scores')
+plt.xlabel('Sentiment_Score')
+plt.ylabel('Frequency')
+plt.show()

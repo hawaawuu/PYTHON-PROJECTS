@@ -1,0 +1,119 @@
+# Importing the necessary packages
+
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
+
+import pandas as pd
+import re
+%matplotlib inline
+import matplotlib.pyplot as plt
+
+# Loading obesity dataset
+dm = pd.read_csv("Obesity_pop_dataset.csv")
+dm.head()
+
+# Descriptive statistics of dataset
+dm.describe()
+
+# Check data types
+dm.dtypes
+
+#Bar charts
+# Count the occurrence of each category
+Obesity = dm['NObeyesdad'].value_counts().sort_index()
+print(Obesity)
+
+# Count the occurrence of each category
+Family_history = dm['family_history_with_overweight'].value_counts().sort_index()
+print(Family_history)
+
+# Bar charts
+plt.figure(figsize=(14,10))
+plt.bar(Obesity.index,Obesity.values, color=['pink'])
+plt.title("Individuals and their Obesity Status")
+plt.show()
+
+plt.figure(figsize=(8,5))
+plt.bar(Family_history.index,Family_history.values, color=['orange'])
+plt.title("Number of Individuals with Family History of Overweight")
+plt.show()
+
+#Box plots
+dm.head()
+
+# Create a binary obesity column
+dm['Obesity'] = dm['NObeyesdad'].apply(lambda x: 1 if 'Obesity'  in x else 0)
+
+# Check the unique values
+dm['Obesity'].value_counts()
+
+# Convert family history to binary
+dm['Family_history'] = dm['family_history_with_overweight'].apply(lambda x: 1 if x.lower() == 'yes' else 0)
+
+# Check the unique values
+dm['Family_history'].value_counts()
+
+dm_t = dm[dm['Obesity'] == 1]
+dm_f = dm[dm['Obesity'] == 0]
+len(dm_t),len(dm_f)
+
+labels = ['Obese', 'Not Obese']
+plt.boxplot([dm_t['Weight'], dm_f['Weight']], tick_labels=labels)
+plt.xlabel("Obesity")
+plt.ylabel("Weight")
+plt.title("Weight Vs. Obesity")
+
+plt.show()
+
+
+labels = ['Obese', 'Not Obese']
+plt.boxplot([dm_t['Age'], dm_f['Age']], tick_labels=labels)
+plt.xlabel("Obesity")
+plt.ylabel("Age")
+plt.title("Age Vs. Obesity")
+
+plt.show()
+
+#Logistic Regression
+dm.head()
+
+columns_to_drop = ['family_history_with_overweight','FAVC', 'CAEC', 'SMOKE','Gender', 'SCC', 'CALC', 'MTRANS', 'NObeyesdad']  
+dm = dm.drop(columns=columns_to_drop)
+dm.head()
+
+dm.corr()
+
+# Identifying outcome and explanatory variables
+x_set = dm[['Age', 'Weight', 'FCVC', 'Family_history', 'NCP']]
+y_Obesity = dm['Obesity']
+x_set
+
+# Setting up logistic model
+import statsmodels.api as sm
+
+# Add a constant
+x_set_const = sm.add_constant(x_set)
+
+# Build the model with the y-outcome variable and X_set of explanatory variables
+lm = sm.Logit(y_Obesity, x_set)
+
+# Fit the model
+result = lm.fit()
+print(result.summary())
+
+# Training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(x, y)
+
+# Train logistic regression model
+logreg = LogisticRegression(random_state=0)
+logreg.fit(x_train, y_train)
+
+# Make predictions
+y_pred = logreg.predict(x_test)
+
+# Measures of Accuracy
+target_names = ['without obesity', 'with obesity']
+print(classification_report(y_test, y_pred, target_names=target_names))

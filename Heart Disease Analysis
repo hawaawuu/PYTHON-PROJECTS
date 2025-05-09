@@ -1,0 +1,166 @@
+# Importing the necessary packages
+
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.preprocessing import StandardScaler
+
+import pandas as pd
+import re
+%matplotlib inline
+import matplotlib.pyplot as plt
+
+# Loading dataset
+dm = pd.read_csv("heart_disease_data.csv")
+dm.head()
+
+# Descriptive statistics of heart disease
+dm.describe()
+
+# Check data types for heart dataset
+dm.dtypes
+
+# 2 Histograms with heart disease dataset
+import seaborn as sns
+
+plt.figure(figsize=(5,5))
+sns.histplot(dm['age'], kde=True)
+plt.ylabel('Frequency')
+
+plt.figure(figsize=(5,5))
+sns.histplot(dm['trestbps'], kde=True)
+plt.ylabel('Frequency')
+plt.show()
+
+dm_t = dm[dm['target'] == 1]
+dm_f = dm[dm['target'] == 0]
+len(dm_t),len(dm_f)
+
+# 3 box plots 
+
+labels = ['Heart disease', 'No Heart disease']
+plt.boxplot([dm_t['chol'], dm_f['chol']], tick_labels=labels)
+plt.xlabel("target")
+plt.ylabel("chol")
+plt.title("Cholesterol Vs. Heart disease")
+
+plt.show()
+
+
+labels = ['Heart disease', 'No Heart disease']
+plt.boxplot([dm_t['age'], dm_f['age']], tick_labels=labels)
+plt.xlabel("target")
+plt.ylabel("cp")
+plt.title("Chest Pain Vs. Heart Disease")
+plt.show()
+
+labels = ['Heart disease', 'No Heart disease']
+plt.boxplot([dm_t['thalach'], dm_f['thalach']], tick_labels=labels)
+plt.xlabel("target")
+plt.ylabel("thalach")
+plt.title("Maximum Heart Rate Vs. Heart Disease")
+
+plt.show()
+
+# Correlation Matrix
+dm.head()
+columns_to_drop = ['Unnamed: 0']  
+dm = dm.drop(columns=columns_to_drop)
+dm.head()
+
+heart_full_quant = dm[["age", "cp", "trestbps", "chol"]]
+heart_full_quant.corr()
+
+import plotly.express as px
+fig = px.scatter_matrix(dm, dimensions=["age", "cp", "trestbps", "thalach"])
+
+fig.update_layout (
+    title=dict (text='Heart Disease Dataset'),
+    width=1000,
+    height=1000,
+)
+
+fig.show()
+
+dm.corr()
+
+# Define features and target
+x = dm.drop("target", axis=1)
+y = dm["target"]
+
+# 3 Predictor Model
+# Setting up logistic model for 3 predictors
+import statsmodels.api as sm
+
+# Add a constant
+x_set_const = sm.add_constant(x_set)
+
+# Build the model with the y-outcome variable and X_set of explanatory variables
+lm = sm.Logit(y, x_set)
+
+# Fit the model
+result = lm.fit()
+print(result.summary())
+
+# Use this code to translate the log odds to add ratio/3 predictors
+model_odds = pd.DataFrame(np.exp(result.params), columns= ['OR'])
+model_odds['p-value']= result.pvalues
+model_odds[['2.5%', '97.5%']] = np.exp(result.conf_int())
+model_odds
+
+#Predictive analysis of 3 predictors
+# Training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(x, y)
+
+# Train logistic regression model
+logreg = LogisticRegression(random_state=0)
+logreg.fit(x_train, y_train)
+
+# Make predictions
+y_pred = logreg.predict(x_test)
+
+# Measures of Accuracy
+target_names = ['without heart disease', 'with heart disease']
+print(classification_report(y_test, y_pred, target_names=target_names))
+
+#5 Predictive Model
+# Identifying outcome and explanatory variables
+x_set = dm[['cp', 'chol', 'age', 'thalach', 'trestbps']]
+y = dm['target']
+x_set
+
+# Setting up logistic model for 5 predictors
+import statsmodels.api as sm
+
+# Add a constant
+x_set_const = sm.add_constant(x_set)
+
+# Build the model with the y-outcome variable and X_set of explanatory variables
+lm = sm.Logit(y, x_set)
+
+# Fit the model
+result = lm.fit()
+print(result.summary())
+
+# Use this code to translate the log odds to add ratio/5 predictors
+model_odds = pd.DataFrame(np.exp(result.params), columns= ['OR'])
+model_odds['p-value']= result.pvalues
+model_odds[['2.5%', '97.5%']] = np.exp(result.conf_int())
+model_odds
+
+#Predictive analysis of 5 predictors
+# Training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(x, y)
+
+# Train logistic regression model
+logreg = LogisticRegression(random_state=0)
+logreg.fit(x_train, y_train)
+
+# Make predictions
+y_pred = logreg.predict(x_test)
+
+# Measures of Accuracy
+target_names = ['without heart disease', 'with heart disease']
+print(classification_report(y_test, y_pred, target_names=target_names))
